@@ -16,7 +16,9 @@ pip install beautifulsoup4
 ## Usage
 
 ```shell
-python ./run.py
+git clone https://github.com/alfmunny/douban-film-crawler.git
+cd douban-film-crawler
+python run.py
 ```
 The films will be written to `films.json` under current folder.
 
