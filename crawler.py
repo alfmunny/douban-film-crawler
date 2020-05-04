@@ -19,6 +19,14 @@ class Crawler:
       response = requests.get(url, headers=self.headers)
       return response
 
+  def _soupify(self, data):
+    return BeautifulSoup(data, "html.parser")
+
+  def _get_soup(self, page):
+    response = self.request(page)
+    data = response.text
+    soup = self._soupify(data)
+    return soup
 
 class DouBanFilm250Crawler(Crawler):
   def __init__(self):
@@ -41,15 +49,6 @@ class DouBanFilm250Crawler(Crawler):
     paginator = soup.find_all("div", class_="paginator")
     hrefs = [a.get("href") for a in paginator[0].find_all('a')]
     self.pages = [ self.url ] + [ self.url + h for h in hrefs ]
-
-  def _soupify(self, data):
-    return BeautifulSoup(data, "html.parser")
-
-  def _get_soup(self, page):
-    response = self.request(page)
-    data = response.text
-    soup = self._soupify(data)
-    return soup
 
   def _get_tags(self, node):
     tags = [ n.string for n in node ]
