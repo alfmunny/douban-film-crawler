@@ -16,7 +16,7 @@ pip install beautifulsoup4
 ## Usage
 
 ```shell
-./run.py
+python ./run.py
 ```
 The films will be written to `films.json` under current folder.
 
