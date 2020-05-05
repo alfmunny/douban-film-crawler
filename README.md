@@ -37,6 +37,7 @@ film_crawler.start(page_limit=2)
 - 一：简单的爬虫
 - 二：加入数据库
 - 三：反扒机制和如何应对
+- 四：学下Docker部署呗
 
 ### 简单的爬虫
 
@@ -144,4 +145,6 @@ def write_to_json(self, film):
 ### 加入数据库
 
 ### 反爬虫机制的应对
+
+###  Docker部署
 
