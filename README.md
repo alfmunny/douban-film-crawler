@@ -73,7 +73,7 @@ class Crawler:
 
 首先我们需要取得所有需要访问的页面链接。一共有十页，找到页面底部翻页，打开浏览器的Developer Tools。
 
-![Screenshot 2020-05-05 at 19.44.28](README/Screenshot 2020-05-05 at 19.44.28.png)
+![Screenshot 2020-05-05 at 19.44.28](README/1.png)
 
 我们可以看到剩下9页的链接。通过BeautifulSoap抓取出来，放在self.pages里。
 
@@ -101,7 +101,7 @@ for page in self.pages: # 遍历所有页面
 
 首先抓取25个电影链接 `get_film_list()`。
 
-![Screenshot 2020-05-05 at 19.53.40](README/Screenshot 2020-05-05 at 19.53.40.png)
+![Screenshot 2020-05-05 at 19.53.40](README/2.png)
 
 ```python
 def get_film_list(self, page):
@@ -112,7 +112,7 @@ def get_film_list(self, page):
 
 然后对25个电影链接进行访问，解析数据`get_film()`。点进单个电影的页面，inspect他的元素，比如导演。
 
-![Screenshot 2020-05-05 at 19.57.27](README/Screenshot 2020-05-05 at 19.57.27.png)
+![Screenshot 2020-05-05 at 19.57.27](README/3.png)
 
 我们为每个电影创建一个电影对象，记录下以下数据。
 
