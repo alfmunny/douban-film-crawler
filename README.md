@@ -217,7 +217,7 @@ test_db
 { "_id" : ObjectId("5eb2b6be0d590d69c0e06386"), "title" : "Unforgiven", "director" : "Clint Eastwood", "actors" : [ "Clint Eastwood", "Gene Hackman", "Morgan Freeman" ], "country" : "USA" }
 ```
 
-数据库熟悉到此结束。更多尽在[官方文档](https://docs.mongodb.com/)。大致看下这篇简介也有帮助：[MongoDB 极简实践入门](https://github.com/StevenSLXie/Tutorials-for-Web-Developers/blob/master/MongoDB\ 极简实践入门.md)
+数据库熟悉到此结束。更多尽在[官方文档](https://docs.mongodb.com/)。大致看下这篇简介也有帮助：[MongoDB 极简实践入门](https://github.com/StevenSLXie/Tutorials-for-Web-Developers/blob/master/MongoDB%20极简实践入门.md)
 
 接下来我门来不全 `DoubanFilm`类中的`save_to_db`函数。
 
