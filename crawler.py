@@ -3,6 +3,11 @@ import os
 import json
 from collections import OrderedDict
 from bs4 import BeautifulSoup
+import datetime
+from pymongo import MongoClient
+import hashlib
+
+MONGODB = MongoClient()
 
 class Crawler:
   def __init__(self, url):
@@ -19,13 +24,13 @@ class Crawler:
       response = requests.get(url, headers=self.headers)
       return response
 
-  def _soupify(self, data):
+  def soupify(self, data):
     return BeautifulSoup(data, "html.parser")
 
-  def _get_soup(self, page):
+  def get_soup(self, page):
     response = self.request(page)
     data = response.text
-    soup = self._soupify(data)
+    soup = self.soupify(data)
     return soup
 
 class DouBanFilm250Crawler(Crawler):
@@ -38,51 +43,51 @@ class DouBanFilm250Crawler(Crawler):
     self.films = []
 
     # set raw_text and pages
-    self._get_raw_text()
-    self._get_pages()
+    self.__get_raw_text()
+    self.__get_pages()
 
-  def _get_raw_text(self):
+  def __get_raw_text(self):
     self.raw_text = self.get_base_data()
 
-  def _get_pages(self):
-    soup = self._soupify(self.raw_text)
+  def __get_pages(self):
+    soup = self.soupify(self.raw_text)
     paginator = soup.find_all("div", class_="paginator")
     hrefs = [a.get("href") for a in paginator[0].find_all('a')]
     self.pages = [ self.url ] + [ self.url + h for h in hrefs ]
 
-  def _get_tags(self, node):
+  def __get_tags(self, node):
     tags = [ n.string for n in node ]
     return ' / '.join(tags)
 
-  def _remove_file(self):
+  def __remove_file(self):
     try:
       os.remove(self.output_file)
     except OSError:
       pass
 
-  def _write_to_json(self, film):
+  def __write_to_json(self, film):
     with open(self.output_file, 'a', encoding='utf8') as output:
       json.dump(film.data, output, ensure_ascii=False, indent=2)
 
   def get_film_list(self, page):
-    soup = self._get_soup(page)
+    soup = self.get_soup(page)
     pics = soup.find_all("div", class_="pic")
     return [ pic.a.get("href") for pic in pics ]
     
   def get_film(self, film_page):
-    soup = self._get_soup(film_page)
+    soup = self.get_soup(film_page)
     film = DoubanFilm()
 
     info = soup.find_all('div', id='info')[0].find_all('span')
 
     film.data['rank'] = soup.find_all('span', class_='top250-no')[0].string
     film.data['name'] = soup.find_all('span', property='v:itemreviewed')[0].string
-    film.data['directors'] = self._get_tags(info[0].find_all('a'))
-    film.data['writers'] = self._get_tags(info[3].find_all('a'))
-    film.data['actors'] = self._get_tags(soup.find_all('span', class_="actor")[0].find_all('a'))
-    film.data['type'] = self._get_tags(soup.find_all('span', property='v:genre'))
+    film.data['directors'] = self.__get_tags(info[0].find_all('a'))
+    film.data['writers'] = self.__get_tags(info[3].find_all('a'))
+    film.data['actors'] = self.__get_tags(soup.find_all('span', class_="actor")[0].find_all('a'))
+    film.data['type'] = self.__get_tags(soup.find_all('span', property='v:genre'))
     film.data['country'] = soup.find(text='制片国家/地区:').next_element.lstrip().rstrip()
-    film.data['release_date'] = self._get_tags(soup.find_all('span', property='v:initialReleaseDate'))
+    film.data['release_date'] = self.__get_tags(soup.find_all('span', property='v:initialReleaseDate'))
     film.data['rating'] = soup.find_all('strong', property='v:average')[0].string
 
     return film
@@ -91,7 +96,7 @@ class DouBanFilm250Crawler(Crawler):
     print("Start fetching films from douban top 250, exporting to " + str(self.output_file))
     print("===============================================")
 
-    self._remove_file() if os.path.exists(self.output_file) else None
+    self.__remove_file() if os.path.exists(self.output_file) else None
 
     for page in self.pages[:page_limit]: 
       film_list = self.get_film_list(page)
@@ -99,7 +104,8 @@ class DouBanFilm250Crawler(Crawler):
         print("Processing page: " + film_page + "...")
         film = self.get_film(film_page)
         print("Film processed: " + film.data['name'])
-        self._write_to_json(film)
+        #self._write_to_json(film)
+        film.save_to_db()
 
 class DoubanFilm:
   def __init__(self):
@@ -109,8 +115,16 @@ class DoubanFilm:
     return str(self.data)
 
   def save_to_db(self):
-    # TODO
-    pass
+    # compute the id using sha1 hashing
+    id = hashlib.sha1(self.data['name'].encode('utf-8')).hexdigest()
+    # update the datetime
+    self.data['update_time'] = datetime.datetime.now()
+    self.data['_id'] = id
+    MONGODB['douban']['films'].update_one(
+        filter={'_id': id }, # make sure we don't insert an exsiting document
+        update={'$set': self.data },
+        upsert=True
+        )
 
 if __name__ == "__main__":
   crawler = DouBanFilm250Crawler()

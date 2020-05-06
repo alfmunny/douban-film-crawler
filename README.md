@@ -34,10 +34,10 @@ film_crawler.start(page_limit=2)
 
 ## 实现过程
 
-- 一：简单的爬虫
-- 二：加入数据库
-- 三：反扒机制和如何应对
-- 四：顺便搞个Docker部署呗
+- [x] 一：简单的爬虫
+- [x] 二：加入数据库
+- [ ] 三：反爬机制和如何应对
+- [ ] 四：顺便搞个Docker部署呗
 
 ### 简单的爬虫
 
@@ -58,7 +58,7 @@ film_crawler.start(page_limit=2)
 class Crawler:
   def __init__(self):
 		self.headers = {
-  		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like 		Gecko) Chrome/69.0.3497.100 Safari/537.36'
+  		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like 		Gecko) Chrome/69.0.3497.100 Safari/537.36'
 		}
 		self.url = 'https://movie.douban.com/top250'
 
@@ -145,6 +145,129 @@ def write_to_json(self, film):
 ```
 
 ### 加入数据库
+
+我们将实用[mongodb](mongodb.com)
+
+安装 mongodb（macOs）
+
+```
+brew tap mongodb/brew
+brew install mongodb-community@4.2
+brew services start mongodb-community@4.2
+```
+
+如何在Windows上安装，请看https://docs.mongodb.com/manual/tutorial/install-mongodb-on-windows/
+
+安装 python的mongodb API：pymongo
+
+```
+pip install pymongo
+```
+
+我们下试试看登陆mongodb，操作一下数据库。
+
+登陆
+
+```shell
+mongo
+```
+
+看下帮助
+
+```
+> help
+```
+
+显示所有databases
+
+```
+> show dbs
+```
+
+我们将使用一个新的test db。在mongodb上无需事先创建，直接use。
+
+```
+> use test_db
+> db # 查看当前db
+test_db
+```
+
+创建一个新的Collection
+
+```
+> db.createCollection('film')
+```
+
+插入一个新的Document，比如说一部电影。
+
+```
+> db.film.insert(
+  {
+    name: 'Unforgiven',
+    director: 'Clint Eastwood',
+    actors: ['Client Eastwood', 'Gene Hackman', 'Morgan Freeman'],
+    country: 'USA',
+  }
+)
+```
+找出电影查看下。
+
+```
+> db.film.find({title: 'Unforgiven'})
+{ "_id" : ObjectId("5eb2b6be0d590d69c0e06386"), "title" : "Unforgiven", "director" : "Clint Eastwood", "actors" : [ "Clint Eastwood", "Gene Hackman", "Morgan Freeman" ], "country" : "USA" }
+```
+
+数据库熟悉到此结束。更多尽在[官方文档](https://docs.mongodb.com/)。大致看下这篇简介也有帮助：[MongoDB 极简实践入门](https://github.com/StevenSLXie/Tutorials-for-Web-Developers/blob/master/MongoDB 极简实践入门.md)
+
+接下来我门来不全 `DoubanFilm`类中的`save_to_db`函数。
+
+先在开头加载库。
+
+```python
+from pymongo import MongoClient # mongodb API
+import datetime # 用于加入update时间戳
+import hashlib # hash函数库
+```
+
+这里需要注意的是我们最好给每天记录计算一个独一无二的_id，防止我们在多次运行爬虫后，反复插入同一个电影。我们利用`update_one`的`filter`来找到已有的电影。如果存在，就更新。如果不存在，就创建。
+
+```python
+MONGODB = MongoClient() # # connnet to the default mongodb
+def save_to_db(self):
+  id = hashlib.sha1(self.data['name'].encode('utf-8')).hexdigest() # compute the unique id using sha1 hashing
+  self.data['update_time'] = datetime.datetime.now() # update the update time
+  self.data['_id'] = id # insert id into data
+  mongodb['douban']['films'].update_one(
+      filter={'_id': id }, # find the film with the id
+      update={'$set': self.data }, # pass the data
+      upsert=True # create if the document does not exist
+      )
+```
+
+然后将之前的write_to_json注释了，使用我们新的write_to_db
+
+```python
+def start(self):
+  ...
+  for ...
+  	for ...
+      ...
+			# self._write_to_json(film)
+			film.save_to_db()
+```
+
+运行
+
+```
+python run.py
+```
+
+结束后，登陆mongodb，查询数据。
+
+```
+> db.films.find({name: '肖申克的救赎 The Shawshank Redemption'})
+{ "_id" : "767b93c5a76d091a3a28a7fa88000ca28120fe06", "actors" : "蒂姆·罗宾斯 / 摩根·弗里曼 / 鲍勃·冈顿 / 威廉姆·赛德勒 / 克兰西·布朗 / 吉尔·贝罗斯 / 马克·罗斯顿 / 詹姆斯·惠特摩 / 杰弗里·德曼 / 拉里·布兰登伯格 / 尼尔·吉恩托利 / 布赖恩·利比 / 大卫·普罗瓦尔 / 约瑟夫·劳格诺 / 祖德·塞克利拉 / 保罗·麦克兰尼 / 芮妮·布莱恩 / 阿方索·弗里曼 / V·J·福斯特 / 弗兰克·梅德拉诺 / 马克·迈尔斯 / 尼尔·萨默斯 / 耐德·巴拉米 / 布赖恩·戴拉特 / 唐·麦克马纳斯", "country" : "美国", "directors" : "弗兰克·德拉邦特", "name" : "肖申克的救赎 The Shawshank Redemption", "rank" : "No.1", "rating" : "9.7", "release_date" : "1994-09-10(多伦多电影节) / 1994-10-14(美国)", "type" : "剧情 / 犯罪", "update_time" : ISODate("2020-05-06T15:39:25.524Z"), "writers" : "弗兰克·德拉邦特 / 斯蒂芬·金" }
+```
 
 ### 反爬虫机制的应对
 
