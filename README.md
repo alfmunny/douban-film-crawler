@@ -34,8 +34,8 @@ film_crawler.start(page_limit=2)
 
 ## 实现过程
 
-- [x] 一：简单的爬虫
-- [x] 二：加入数据库
+- [x] 一：[简单的爬虫](#简单的爬虫)
+- [x] 二：[加入数据库](#加入数据库)
 - [ ] 三：反爬机制和如何应对
 - [ ] 四：顺便搞个Docker部署呗
 
@@ -58,7 +58,7 @@ film_crawler.start(page_limit=2)
 class Crawler:
   def __init__(self):
 		self.headers = {
-  		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like 		Gecko) Chrome/69.0.3497.100 Safari/537.36'
+  		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'
 		}
 		self.url = 'https://movie.douban.com/top250'
 
@@ -217,7 +217,7 @@ test_db
 { "_id" : ObjectId("5eb2b6be0d590d69c0e06386"), "title" : "Unforgiven", "director" : "Clint Eastwood", "actors" : [ "Clint Eastwood", "Gene Hackman", "Morgan Freeman" ], "country" : "USA" }
 ```
 
-数据库熟悉到此结束。更多尽在[官方文档](https://docs.mongodb.com/)。大致看下这篇简介也有帮助：[MongoDB 极简实践入门](https://github.com/StevenSLXie/Tutorials-for-Web-Developers/blob/master/MongoDB 极简实践入门.md)
+数据库熟悉到此结束。更多尽在[官方文档](https://docs.mongodb.com/)。大致看下这篇简介也有帮助：[MongoDB 极简实践入门](https://github.com/StevenSLXie/Tutorials-for-Web-Developers/blob/master/MongoDB\ 极简实践入门.md)
 
 接下来我门来不全 `DoubanFilm`类中的`save_to_db`函数。
 
