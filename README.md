@@ -203,7 +203,7 @@ test_db
 ```
 > db.film.insert(
   {
-    name: 'Unforgiven',
+    title: 'Unforgiven',
     director: 'Clint Eastwood',
     actors: ['Client Eastwood', 'Gene Hackman', 'Morgan Freeman'],
     country: 'USA',
