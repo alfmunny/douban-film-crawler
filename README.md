@@ -164,7 +164,7 @@ brew services start mongodb-community@4.2
 pip install pymongo
 ```
 
-我们下试试看登陆mongodb，操作一下数据库。
+我们先试试看登陆mongodb，学习简单操作一下数据库。
 
 登陆
 
@@ -219,7 +219,7 @@ test_db
 
 数据库熟悉到此结束。更多尽在[官方文档](https://docs.mongodb.com/)。大致看下这篇简介也有帮助：[MongoDB 极简实践入门](https://github.com/StevenSLXie/Tutorials-for-Web-Developers/blob/master/MongoDB%20极简实践入门.md)
 
-接下来我门来不全 `DoubanFilm`类中的`save_to_db`函数。
+接下来我门来补全 `DoubanFilm`类中的`save_to_db`函数。
 
 先在开头加载库。
 
@@ -229,7 +229,7 @@ import datetime # 用于加入update时间戳
 import hashlib # hash函数库
 ```
 
-这里需要注意的是我们最好给每天记录计算一个独一无二的_id，防止我们在多次运行爬虫后，反复插入同一个电影。我们利用`update_one`的`filter`来找到已有的电影。如果存在，就更新。如果不存在，就创建。
+这里需要注意的是我们最好给每个记录计算一个独一无二的_id，防止我们在多次运行爬虫后，反复插入同一个电影。我们利用`update_one`的`filter`来找到已有的电影。如果存在，就更新。如果不存在，就创建。
 
 ```python
 MONGODB = MongoClient() # # connnet to the default mongodb
@@ -248,12 +248,8 @@ def save_to_db(self):
 
 ```python
 def start(self):
-  ...
-  for ...
-  	for ...
-      ...
-			# self._write_to_json(film)
-			film.save_to_db()
+  # self._write_to_json(film)
+  film.save_to_db()
 ```
 
 运行
