@@ -16,7 +16,7 @@ MONGODB = MongoClient(host="mongodb://crawler-mongo", port=27017)
 class Crawler:
   def __init__(self, url):
     self.headers = { 
-        'User-Agent': 'anything'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36'
     }
     self.url = url
 
@@ -25,7 +25,7 @@ class Crawler:
     return data
 
   def request(self, url):
-      response = requests.get(url, headers=self.headers)
+      response = requests.get(url, headers=self.headers, timeout=30)
       return response
 
   def soupify(self, data):
