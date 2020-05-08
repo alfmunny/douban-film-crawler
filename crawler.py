@@ -16,7 +16,7 @@ MONGODB = MongoClient(host="mongodb://crawler-mongo", port=27017)
 class Crawler:
   def __init__(self, url):
     self.headers = { 
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36' 
+        'User-Agent': 'anything'
     }
     self.url = url
 
@@ -102,6 +102,8 @@ class DouBanFilm250Crawler(Crawler):
     film.data['rating'] = soup.find_all('strong', property='v:average')[0].string
     film.data['img'] = soup.find_all('div', id='mainpic')[0].find_all('img')[0]['src']
 
+    time.sleep(5)
+
     return film
 
   def start(self, page_limit=100):
@@ -119,7 +121,7 @@ class DouBanFilm250Crawler(Crawler):
         #self.write_to_json(film)
         film.save_to_db()
         film.save_img(self.image_dir)
-        time.sleep(10)
+        time.sleep(5)
 
 class DoubanFilm:
   def __init__(self):

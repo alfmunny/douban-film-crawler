@@ -7,10 +7,11 @@ The script pulls the Top 250 films from [douban](https://movie.douban.com/top250
 - python3
 - pip
 
-Install `BeautifulSoup` for parsing html.
+Install `requests` for sending requests and `BeautifulSoup` for parsing html.
 
 ```shell
 $ pip install beautifulsoup4
+$ pip install requests
 ```
 
 ## Usage
@@ -40,6 +41,12 @@ film_crawler.start(page_limit=2)
 - [x] 四：[搞个Docker部署呗](#Docker部署)
 - [ ] 五：反爬机制和如何应对
 
+开始之前，首先**非常重要**的一点，请阅读网站的爬虫规则。不然会进小黑屋。
+
+[douban 爬虫规则 douban.com/robots.txt](douban.com/robots.txt)
+
+特别注意需要在每次请求中加加入5秒的delay。
+
 ### 简单的爬虫
 
 目标
@@ -56,6 +63,12 @@ film_crawler.start(page_limit=2)
 访问根网站，取回html内容。headers是为了让你的访问看起来像是来自浏览器。
 
 ```python
+import requests
+import json
+import collections OrderedDict
+import time
+from bs4 import BeautifulSoup
+
 class Crawler:
   def __init__(self):
 		self.headers = {
@@ -96,6 +109,7 @@ for page in self.pages: # 遍历所有页面
   for film_page in film_list: # 遍历这些电影
     film = self.get_film(film_page) # 提取电影数据
     self.write_to_json(film) # 保存到文件
+    time.sleep(5)
 ```
 
 接下来我们我们来实现其中的 `get_film_list()`， `get_film()`和 `write_to_json()`
@@ -125,6 +139,7 @@ class DoubanFilm:
 ```python
 def get_film(self, film_page):
   soup = self._get_soup(film_page)
+  time.sleep(5)
   film = DoubanFilm()
 
   info = soup.find_all('div', id='info')[0].find_all('span')
