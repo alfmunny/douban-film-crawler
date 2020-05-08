@@ -1,0 +1,13 @@
+version: '2.0'
+
+services:
+  crawler-mongo:
+    image: mongo
+    ports:
+      - "4001:27017"
+  crawler-app:
+    build: .
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      - crawler-mongo

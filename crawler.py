@@ -6,8 +6,11 @@ from bs4 import BeautifulSoup
 import datetime
 from pymongo import MongoClient
 import hashlib
+from PIL import Image
+import urllib.request as urllib
+import io
 
-MONGODB = MongoClient()
+MONGODB = MongoClient(host="mongodb://crawler-mongo", port=27017)
 
 class Crawler:
   def __init__(self, url):
@@ -38,6 +41,7 @@ class DouBanFilm250Crawler(Crawler):
     self.url = 'https://movie.douban.com/top250'
     Crawler.__init__(self, self.url)
     self.output_file = "films.json"
+    self.image_dir = "images"
     self.raw_text = ""
     self.pages = []
     self.films = []
@@ -45,6 +49,7 @@ class DouBanFilm250Crawler(Crawler):
     # set raw_text and pages
     self.__get_raw_text()
     self.__get_pages()
+    self.__creat_image_dir()
 
   def __get_raw_text(self):
     self.raw_text = self.get_base_data()
@@ -54,6 +59,11 @@ class DouBanFilm250Crawler(Crawler):
     paginator = soup.find_all("div", class_="paginator")
     hrefs = [a.get("href") for a in paginator[0].find_all('a')]
     self.pages = [ self.url ] + [ self.url + h for h in hrefs ]
+
+  def __creat_image_dir(self):
+    if not os.path.exists(self.image_dir):
+      os.mkdir(self.image_dir)
+      print("Directory", self.image_dir, " created")
 
   def __get_tags(self, node):
     tags = [ n.string for n in node ]
@@ -65,7 +75,7 @@ class DouBanFilm250Crawler(Crawler):
     except OSError:
       pass
 
-  def __write_to_json(self, film):
+  def write_to_json(self, film):
     with open(self.output_file, 'a', encoding='utf8') as output:
       json.dump(film.data, output, ensure_ascii=False, indent=2)
 
@@ -89,11 +99,12 @@ class DouBanFilm250Crawler(Crawler):
     film.data['country'] = soup.find(text='制片国家/地区:').next_element.lstrip().rstrip()
     film.data['release_date'] = self.__get_tags(soup.find_all('span', property='v:initialReleaseDate'))
     film.data['rating'] = soup.find_all('strong', property='v:average')[0].string
+    film.data['img'] = soup.find_all('div', id='mainpic')[0].find_all('img')[0]['src']
 
     return film
 
   def start(self, page_limit=100):
-    print("Start fetching films from douban top 250, exporting to " + str(self.output_file))
+    print("Start fetching films from douban top 250")
     print("===============================================")
 
     self.__remove_file() if os.path.exists(self.output_file) else None
@@ -104,8 +115,9 @@ class DouBanFilm250Crawler(Crawler):
         print("Processing page: " + film_page + "...")
         film = self.get_film(film_page)
         print("Film processed: " + film.data['name'])
-        #self._write_to_json(film)
+        #self.write_to_json(film)
         film.save_to_db()
+        film.save_img(self.image_dir)
 
 class DoubanFilm:
   def __init__(self):
@@ -125,6 +137,11 @@ class DoubanFilm:
         update={'$set': self.data },
         upsert=True
         )
+    print("Data saved with id {0}".format(id))
+
+  def save_img(self, directory):
+    print("Poster saved int to {0}/".format(directory))
+    urllib.urlretrieve(self.data['img'], "./{0}/{1}.jpg".format(directory, self.data['name']))
 
 if __name__ == "__main__":
   crawler = DouBanFilm250Crawler()
