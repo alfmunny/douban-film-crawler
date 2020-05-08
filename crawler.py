@@ -9,6 +9,7 @@ import hashlib
 from PIL import Image
 import urllib.request as urllib
 import io
+import time
 
 MONGODB = MongoClient(host="mongodb://crawler-mongo", port=27017)
 
@@ -118,6 +119,7 @@ class DouBanFilm250Crawler(Crawler):
         #self.write_to_json(film)
         film.save_to_db()
         film.save_img(self.image_dir)
+        time.sleep(10)
 
 class DoubanFilm:
   def __init__(self):

@@ -310,10 +310,13 @@ def save_img(self, directory):
 
 最后把`save_img()`添加到主抓取循环中
 
+注意这里请加入一点sleep时间，不然容易被ban，不让你爬了。
+
 ```python
 def start(self, page_limit=100):
     ...
     film.save_img(self.image_dir)
+    time.sleep(5)
 ```
 
 运行程序，现在可以看到电影海报都被抓取到了当前的images文件夹。
@@ -354,13 +357,12 @@ f78ffdc9793b        mongo               "docker-entrypoint.s…"   About an hour
 
 我们先来准备一下如何python的requirements.txt文件。待会容器内可以使用它来自动下载你需要的python包。
 
-我们一共就需要4个包
+我们一共就需要安装3个包，写进requirements.txt
 
 ```
 beautifulsoup4==4.6.0
 requests==2.22.0
 pymongo==3.10.1
-urllib3==1.24.2
 ```
 
 我们需要通过Dockerfile来配置容器。docker会自动读取本目录下的Dockerfile来制作镜像。
@@ -448,9 +450,11 @@ $ docker run -it --rm -v ${PWD}:/usr/src/app --network crawler --name crawler-ap
 
 `-it`: 是 interactive terminal的意思，启动后我们将会进入容器的交互终端
 
-`--rm`: 退出容器是自动删除容器
+`--rm`: 退出容器时自动删除容器
 
-`-v`: volumes选项，可以把本机上的文件位置挂载到容器内部的位置。这里这样的目的是我们的爬虫有下载图片到images文件夹。但是当爬虫跑在容器内部，images文件夹也在容器里。我们从外面看不见。你需要进入到容器内部查看。而且如果指定了`--rm`会在运行后删除容器。我们通过挂载本地的文件系统到容器内部的app的工作目录，那么images就会直接写入我们本地的文件夹，实现了同步的效果。这算是一种让保存数据的常用方法。
+`-v`: volumes选项，可以把本机上的文件位置挂载到容器内部的位置。这里这样的目的是我们的爬虫有下载图片到images文件夹。但是当爬虫跑在容器内部，images文件夹也在容器里。我们从外面看不见。你需要进入到容器内部查看。
+
+而且如果指定了`--rm`会在运行后删除容器。我们通过挂载本地的文件系统到容器内部的app的工作目录，那么images就会直接写入我们本地的文件夹，实现了同步的效果。这算是一种让保存数据的常用方法。
 
 其实这里还有一个作用，我们刚才在crawler.py里修改了端口。本应该重新docker build这个镜像。但是通过挂载，容器内部也使用了最新的crawler.py文件。所以省去了从新build的步骤。
 
@@ -480,7 +484,7 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 f78ffdc9793b        mongo               "docker-entrypoint.s…"   2 hours ago         Up 2 hours          0.0.0.0:4001->27017/tcp   crawler-mongo
 ```
 
-爬一会，我们结束容器。
+爬一会，别太久，我们结束容器。
 
 ```bash
 $ docker kill crawler-app
@@ -603,3 +607,4 @@ $ docker-compose down
 
 ### 反爬虫机制的应对
 
+   
