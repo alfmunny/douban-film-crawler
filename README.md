@@ -518,9 +518,9 @@ $ docker kill crwaler-mongo
 $ docker kill crawler-app 
 ```
 
-通过配置`docker-compose.yaml`来实现自动化部署。
+通过配置`docker-compose.yml`来实现自动化部署。
 
-```docker-compose.yml
+```
 services:
 	crawler-mongo:
 		image: mongo     	# 镜像名字
