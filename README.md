@@ -522,16 +522,16 @@ $ docker kill crawler-app
 
 ```
 services:
-	crawler-mongo:
-		image: mongo     	# 镜像名字
-		ports:							
-			- "4002:27017" 	# 这里使用4002，是因为如果没有kill之前的mongodb容器，那么4001已经被占用，会报错。
-	crawler-app:     
-		build: .					 # 使用Dockerfile制作镜像
-		volumes:	
-			- .:/usr/src/app	
-		depends_on:
-			- crawler-mongo	#	依赖数据库。crawler-app会在mongo启动后运行。
+  crawler-mongo:
+    image: mongo     	# 镜像名字
+    ports:
+      - "4002:27017" 	# 这里使用4002，是因为如果没有kill之前的mongodb容器，那么4001已经被占用，会报错。                 
+  crawler-app: 
+    build: .					 # 使用Dockerfile制作镜像
+    volumes:	
+      - .:/usr/src/app	
+    depends_on:
+      - crawler-mongo	#	依赖数据库。crawler-app会在mongo启动后运行。
 ```
 
 你可能注意到这里并没有指定他们的网络。那是因为docker-compose会自动创建一个以当前项目文件夹的名字加上`_default`为名的网络，然后有所的services都加入都同一个网络下面，不需要手动配置。
