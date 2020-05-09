@@ -7,7 +7,7 @@ The script pulls the Top 250 films from [douban](https://movie.douban.com/top250
 - python3
 - pip
 
-Install `requests` for sending requests and `BeautifulSoup` for parsing html.
+Install `requests` for sending requests and `BeautifulSoup` for parsing html.
 
 ```shell
 $ pip install beautifulsoup4
@@ -33,25 +33,34 @@ film_crawler = DouBanFilm250Crawler()
 film_crawler.start(page_limit=2)
 ```
 
+## 前言
+
+本项目的目的不是爬虫本身，而是通过爬虫的案例，展示开发的流程和python的应用，如何从零开始到自动化部署。
+
+1. python的网络相关库的应用
+2. 网页的解析
+3. 数据库的搭建
+4. Docker封装与部署
+
 ## 实现过程
 
 - [x] 一：[简单的爬虫](#简单的爬虫)
 - [x] 二：[加入数据库](#加入数据库)
 - [x] 三：[抓取图片](#抓取图片)
-- [x] 四：[搞个Docker部署呗](#Docker部署)
-- [ ] 五：反爬机制和如何应对
+- [x] 四：[Docker部署](#Docker部署)
+- [x] 五：[反爬机制的应对](#反爬虫机制的应对)
 
 开始之前，首先**非常重要**的一点，请阅读网站的爬虫规则。不然会进小黑屋。
 
-[douban 爬虫规则 douban.com/robots.txt](douban.com/robots.txt)
+[douban 爬虫规则](https://douban.com/robots.txt)
 
-特别注意需要在每次请求中加加入5秒的delay。
+特别注意需要在每次请求中加入5秒的delay。
 
 ### 简单的爬虫
 
 目标
 
-1. 爬取豆瓣Top250电影
+1. 爬取[豆瓣Top250电影](https://movie.douban.com/top250)
 2. 将信息存入json文件
 
 我们主要用到`requests` and `beautifulsoup4`
@@ -60,7 +69,7 @@ film_crawler.start(page_limit=2)
 
 `beautifulsoup4` 用来解析返回的html内容，抽取信息
 
-访问根网站，取回html内容。headers是为了让你的访问看起来像是来自浏览器。
+访问根网站，取回html内容。headers的加入是为了让你的访问看起来像是来自浏览器。
 
 ```python
 import requests
@@ -74,9 +83,8 @@ class Crawler:
     self.headers = {
   		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'
 		}
-
-	self.url = 'https://movie.douban.com/top250'
-
+    self.url = 'https://movie.douban.com/top250'
+    
   def request(self, url):
     response = requests.get(url, headers=self.headers)
     
@@ -139,7 +147,6 @@ class DoubanFilm:
 ```python
 def get_film(self, film_page):
   soup = self._get_soup(film_page)
-  time.sleep(5)
   film = DoubanFilm()
 
   info = soup.find_all('div', id='info')[0].find_all('span')
@@ -150,6 +157,8 @@ def get_film(self, film_page):
   film.data['writers'] = self._get_tags(info[3].find_all('a'))
   film.data['actors'] = self._get_tags(soup.find_all('span', class_="actor")[0].find_all('a'))
   film.data['type'] = self._get_tags(soup.find_all('span', property='v:genre'))
+
+  time.sleep(5) # crawl delay
 ```
 
 最后保存数据到json。`write_to_json()`。
@@ -260,11 +269,11 @@ def save_to_db(self):
       )
 ```
 
-然后将之前的write_to_json注释了，使用我们新的write_to_db
+然后将之前的write_to_json注释了，使用我们新的`write_to_db()`
 
 ```python
 def start(self):
-  # self._write_to_json(film)
+  # self.write_to_json(film)
   film.save_to_db()
 ```
 
@@ -325,8 +334,6 @@ def save_img(self, directory):
 
 最后把`save_img()`添加到主抓取循环中
 
-注意这里请加入一点sleep时间，不然容易被ban，不让你爬了。
-
 ```python
 def start(self, page_limit=100):
     ...
@@ -340,19 +347,21 @@ def start(self, page_limit=100):
 
 目标：把爬虫和数据库分别部署在两个容器内。并让他们互相通信，存储信息。
 
+Docker是一种容器技术。目的是隔离服务器上不同服务的运行环境，并实现自动化配置环境和部署，简化运维。
+
 #### 第一步 部署数据库mongodb
 
-指定我们要使用的镜像`mongo`，run起来。如果本地没用mongo镜像，docker会自动从Docker Hub上下载。
+指定我们要使用的镜像`mongo`，run起来。如果本地没用mongo镜像，docker会自动从[Docker Hub](https://hub.docker.com/_/mongo)上下载。
 
 ```shell
 $ docker run -p 4001:27017 --name crawler-mongo -d mongo
 ```
 
-解释一下参数
+解释一下参数:
 
-`-p`: 指定端口。因为mongodb是默认跑在容器内部的端口27017上的，我们把它和映射到我们主机的端口4001。这样我也可以从外部通过访问4001访问mongodb了。可以试一下`mongo --port 4001`。你应该可以成功登陆容器内的mongodb了
+`-p`: 指定端口。因为mongodb是默认跑在容器内部的端口27017上的，我们把它映射到我们主机的端口4001。这样我也可以从外部通过访问4001登陆mongodb了。可以试一下`mongo --port 4001`。你应该可以成功登陆容器内的mongodb了。
 
-`--name`: 给你的容器取个名字
+`--name`: 给你的容器取个名字。不取的话随机生成。
 
 `-d`: 以daemon形式启动容器。这样容器就是一个跑在后台的service了。
 
@@ -360,17 +369,13 @@ $ docker run -p 4001:27017 --name crawler-mongo -d mongo
 
 ```bash
 $ docker ps
-```
-
-```
 CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                     NAMES
 f78ffdc9793b        mongo               "docker-entrypoint.s…"   About an hour ago   Up About an hour    0.0.0.0:4001->27017/tcp   crawler-mongo
-
 ```
 
-#### 第二部 部署爬虫
+#### 第二步 部署爬虫
 
-我们先来准备一下如何python的requirements.txt文件。待会容器内可以使用它来自动下载你需要的python包。
+我们先来准备一下python的requirements.txt文件。待会容器内可以使用它来自动下载你需要的python包。
 
 我们一共就需要安装3个包，写进requirements.txt
 
@@ -457,7 +462,7 @@ $ docker inspect network crawler
 MONGODB = MongoClient(host="mongodb://crawler-mongo", port=27017) # mongodb的容器名字和它在容器内部的端口
 ```
 
-好，万事俱备，我们启动爬虫的容器，使用刚才通过Dockerfile制作的镜像。
+万事俱备，我们启动爬虫的容器，使用刚才通过Dockerfile制作的镜像。
 
 ```
 $ docker run -it --rm -v ${PWD}:/usr/src/app --network crawler --name crawler-app douban-crawler
@@ -499,18 +504,18 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 f78ffdc9793b        mongo               "docker-entrypoint.s…"   2 hours ago         Up 2 hours          0.0.0.0:4001->27017/tcp   crawler-mongo
 ```
 
-爬一会，别太久，我们结束容器。
+爬一会，我们结束容器。
 
 ```bash
 $ docker kill crawler-app
 ```
 
-#### 成果
+#### 第三步 验证成果
 
 来查看下成果
 
-1. 你可以在本地看到images文件夹被建立，里面是爬下来的文件
-2. 通过登陆暴露在4001的端口，我们也可连接mongodb。查看电影信息。
+1. 你可以在本地看到images文件夹被建立，里面是爬下来的海报。
+2. 通过登陆暴露在4001的端口，我们也可连接mongodb，查看电影信息。
 
 ```
 $ mongo --port 4001
@@ -520,11 +525,11 @@ $ mongo --port 4001
 { "_id" : "c8ef1e21bbf697c997957ec09a27524aaf059edf", "actors" : "张国荣 / 张丰毅 / 巩俐 / 葛优 / 英达 / 蒋雯丽 / 吴大维 / 吕齐 / 雷汉 / 尹治 / 马明威 / 费振翔 / 智一桐 / 李春 / 赵海龙 / 李丹 / 童弟 / 沈慧芬 / 黄斐 / 徐杰", "country" : "中国大陆 / 中国香港", "directors" : "陈凯歌", "img" : "https://img9.doubanio.com/view/photo/s_ratio_poster/public/p2561716440.jpg", "name" : "霸王别姬", "rank" : "No.2", "rating" : "9.6", "release_date" : "1993-01-01(中国香港) / 1993-07-26(中国大陆)", "type" : "剧情 / 爱情 / 同性", "update_time" : ISODate("2020-05-08T20:13:12.717Z"), "writers" : "芦苇 / 李碧华" }
 ```
 
-#### 整合
+#### 第四步 整合简化
 
 我们可以看到之前为了制作，配置网络，启动，是一个颇为繁琐的过程。
 
-我们可以通过`docker-compose`工具来全自动地完成这些动作，大大地简化部署。
+我们可以通过docker自带的工具`docker-compose`工具来全自动地完成这些动作，大大地简化部署。
 
 先kill掉之前的容器，防止ip被占用等一些其他的情况，安全起见。如果后台还在跑crawler-app也关掉。
 
@@ -534,6 +539,8 @@ $ docker kill crawler-app
 ```
 
 通过配置`docker-compose.yml`来实现自动化部署。
+
+我们需要两个services，一个crawler-mongo, 一个crawler-app。
 
 ```
 services:
@@ -557,7 +564,7 @@ services:
 $ docker-compose up -d
 ```
 
-两个容器都已经在后台运行了。完成了上一章的所有动作。
+两个容器都已经在后台运行了。完成了上一章的所有动作。`douban-crawler_default`就是`dockr-compose`自动创建的网络。
 
 查看一下网络。 顺便删除之前手工创建的网络。
 
@@ -580,7 +587,7 @@ c3fb64f1e357        douban-crawler_crawler-app   "python ./run.py"        27 min
 816eadab6a57        mongo                        "docker-entrypoint.s…"   27 minutes ago      Up 3 seconds        0.0.0.0:4001->27017/tcp   douban-crawler_crawler-mongo_1
 ```
 
-两个容器的名字都是docker-compose根据配置自动取的，特别长。我们也可以使用他们的ID来查看。是一样的。比如使用python程序运行容器的ID：`c3fb64f1e357`。
+两个容器的名字都是docker-compose根据配置自动取的，特别长。我们也可以使用他们的ID来查看。是一样的。比如使用python程序运行容器的ID：`c3fb64f1e357`，也可以用service的名字，`crawler-app`。
 
 通过查看日志来了解程序运行情况。
 
@@ -594,7 +601,7 @@ Data saved with id 767b93c5a76d091a3a28a7fa88000ca28120fe06
 ... ...
  ```
 
-只差看近三十分钟
+只查看近三十分钟
 
 ```bash
 $ docker logs --since 30m c3fb64f1e357
@@ -617,5 +624,20 @@ $ docker-compose stop
 ```bash
 $ docker-compose down	
 ```
-
 ### 反爬虫机制的应对
+
+很多网站都有反爬虫机制。你也可以通过查看网站官方的爬虫建议，一般是robots.txt，来合理合法的爬取。
+
+之前我们已经用到了一丁点技巧，来绕过反爬虫的识别。那就是在header中添加User-Agent，来伪装成一个来自浏览器的请求。当然如果你频率太高，一样会被禁。
+
+也有不容易被禁的方法。为了加快爬取的效率，会对爬虫并行化，集群化，分布式爬取。然后通过维护一个代理IP池，让访问随机的来自不同的IP。并且可以加入一些频率上的随机扰动或者schedule来让爬虫不那么刻意。[^1] 再通过调节一个合理的访问频率，可以比较稳定的爬取，凡事都要互相体谅。
+
+拓展：
+
+1. 分布式爬虫的框架[scrapy](https://scrapy.org/)。
+2. Docker集群管理Docker Swarm，Kubernetes
+3. 爬虫集群管理[Crawlab](https://github.com/crawlab-team/crawlab)
+
+本文参考来源：
+
+[^1]: https://xlzd.me/2017/11/21/crawler-archive/
