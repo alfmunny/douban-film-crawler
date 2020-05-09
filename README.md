@@ -71,18 +71,18 @@ from bs4 import BeautifulSoup
 
 class Crawler:
   def __init__(self):
-		self.headers = {
+    self.headers = {
   		'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'
 		}
-		self.url = 'https://movie.douban.com/top250'
 
- 	def request(self, url):
+	self.url = 'https://movie.douban.com/top250'
+
+  def request(self, url):
     response = requests.get(url, headers=self.headers)
     
-	def get_base_data(self):
+  def get_base_data(self): 
     data = self.request(self.url).text
     return data
-
 ```
 
 首先我们需要取得所有需要访问的页面链接。一共有十页，找到页面底部翻页，打开浏览器的Developer Tools。
@@ -618,8 +618,4 @@ $ docker-compose stop
 $ docker-compose down	
 ```
 
-
-
 ### 反爬虫机制的应对
-
-   

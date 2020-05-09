@@ -16,7 +16,7 @@ MONGODB = MongoClient(host="mongodb://crawler-mongo", port=27017)
 class Crawler:
   def __init__(self, url):
     self.headers = { 
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36',
     }
     self.url = url
 
