@@ -409,7 +409,7 @@ $ docker build -t douban-crawler .
 在启动镜像之前，我们最好配置一下网络。因为我们必须保证他和mongodb跑在同一个网络，才可以通过IP地址来连接它。我们先创建一个网络。
 
 ```bash
-$ docker create network crawler
+$ docker network createn crawler
 ```
 
 查看一下，可以看到新建的网络。
